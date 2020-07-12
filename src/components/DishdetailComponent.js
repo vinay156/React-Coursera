@@ -16,6 +16,9 @@ import {
 } from "reactstrap";
 import { Link } from "react-router-dom";
 import { Control, LocalForm, Errors } from "react-redux-form";
+import { Loading } from "./loadingComponent";
+import { baseUrl } from "../shared/baseUrl";
+import { FadeTransform } from "react-animation-components";
 
 const required = (val) => val && val.length;
 const maxLength = (len) => (val) => !val || val.length <= len;
@@ -37,7 +40,12 @@ class CommentForm extends Component {
 
   handleSubmit = (values) => {
     this.toggleModal();
-    alert("Current values are : " + JSON.stringify(values));
+    this.props.postComment(
+      this.props.dishId,
+      values.rating,
+      values.name,
+      values.comment
+    );
   };
 
   render() {
@@ -121,13 +129,20 @@ function RenderDish({ dish }) {
   if (dish != null) {
     return (
       <div className="col-12 col-md-5 m-1">
-        <card>
-          <CardImg width="100%" src={dish.image} alt={dish.name} />
-          <CardBody>
-            <CardTitle>{dish.name}</CardTitle>
-            <CardText>{dish.description}</CardText>
-          </CardBody>
-        </card>
+        <FadeTransform
+          in
+          transformProps={{
+            exitTransform: "scale(0.5) translateY(-50%)",
+          }}
+        >
+          <card>
+            <CardImg width="100%" src={baseUrl + dish.image} alt={dish.name} />
+            <CardBody>
+              <CardTitle>{dish.name}</CardTitle>
+              <CardText>{dish.description}</CardText>
+            </CardBody>
+          </card>
+        </FadeTransform>
       </div>
     );
   } else {
@@ -135,7 +150,7 @@ function RenderDish({ dish }) {
   }
 }
 
-function RenderComments({ comments }) {
+function RenderComments({ comments, postComment, dishId }) {
   if (comments == null) {
     return <div></div>;
   }
@@ -159,7 +174,7 @@ function RenderComments({ comments }) {
     <div className="col-12 col-md-5 m-1">
       <h4>Comments</h4>
       <ul className="list-unstyled">{comnts}</ul>
-      <CommentForm />
+      <CommentForm dishId={dishId} postComment={postComment} />
     </div>
   );
 }
@@ -167,8 +182,23 @@ function RenderComments({ comments }) {
 const DishDetail = (props) => {
   console.log("DishdetailComponent render invoked");
 
-  const dish = props.dish;
-  if (dish == null) {
+  if (props.isLoading) {
+    return (
+      <dviv className="container">
+        <div className="row">
+          <Loading />
+        </div>
+      </dviv>
+    );
+  } else if (props.errMess) {
+    return (
+      <dviv className="container">
+        <div className="row">
+          <h4>{props.errMess}</h4>
+        </div>
+      </dviv>
+    );
+  } else if (props.dish == null) {
     return <div></div>;
   }
   return (
@@ -187,7 +217,11 @@ const DishDetail = (props) => {
       </div>
       <div className="row">
         <RenderDish dish={props.dish} />
-        <RenderComments comments={props.comments} />
+        <RenderComments
+          comments={props.comments}
+          postComment={props.postComment}
+          dishId={props.dish.id}
+        />
       </div>
     </div>
   );
